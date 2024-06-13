@@ -23,4 +23,7 @@ app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("lang", change_language))
 
+# Add new command handler
+# app.add_handler(CommandHandler("new_command", new_handler))
+
 app.run_polling()
