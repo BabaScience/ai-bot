@@ -17,8 +17,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# BOT_TOKEN = dotenv_values(".env")["BOT_TOKEN"]
-BOT_TOKEN = os.getenv('BOT_TOKEN')
+BOT_TOKEN = dotenv_values(".env")["BOT_TOKEN"] if dotenv_values(".env").get("DEV") == "true"  else os.getenv('BOT_TOKEN')
 HEROKU_APP_NAME = os.getenv('HEROKU_APP_NAME')
 APP_URL = f"https://{HEROKU_APP_NAME}.herokuapp.com/{BOT_TOKEN}" if HEROKU_APP_NAME else None
 
