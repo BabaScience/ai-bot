@@ -25,6 +25,7 @@ APP_URL = f"https://{HEROKU_APP_NAME}.herokuapp.com/{BOT_TOKEN}" if HEROKU_APP_N
 app = Flask(__name__)
 
 # Create Telegram bot and updater
+print("@@@@@@@@@@@@@ BOT_TOKEN", BOT_TOKEN)
 bot = Bot(token=BOT_TOKEN)
 update_queue = asyncio.Queue()
 updater = Updater(bot=bot, update_queue=update_queue)
