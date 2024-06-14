@@ -17,7 +17,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = dotenv_values(".env")["BOT_TOKEN"]
+# BOT_TOKEN = dotenv_values(".env")["BOT_TOKEN"]
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 HEROKU_APP_NAME = os.getenv('HEROKU_APP_NAME')
 APP_URL = f"https://{HEROKU_APP_NAME}.herokuapp.com/{BOT_TOKEN}" if HEROKU_APP_NAME else None
 
@@ -26,6 +27,8 @@ app = Flask(__name__)
 
 # Create Telegram bot and updater
 print("@@@@@@@@@@@@@ BOT_TOKEN", BOT_TOKEN)
+print("@@@@@@@@@@@@@ HEROKU_APP_NAME", HEROKU_APP_NAME)
+print("@@@@@@@@@@@@@ APP_URL", APP_URL)
 bot = Bot(token=BOT_TOKEN)
 update_queue = asyncio.Queue()
 updater = Updater(bot=bot, update_queue=update_queue)
