@@ -73,7 +73,23 @@ async def help_command(update: Update, context: CallbackContext) -> None:
         None
     """
     user_lang = context.user_data.get('lang', DEFAULT_LANGUAGE)
-    await update.message.reply_text(translate('Help! This is a bot to demonstrate a boilerplate.', user_lang))
+    help_text = translate('Help! This is a bot to demonstrate a boilerplate.', user_lang)
+    
+    # Add information about the AI capabilities
+    ai_help = """
+    
+This bot now has AI capabilities powered by a local LLM through Ollama:
+
+/ask [question] - Ask a single question to the AI
+/chat - Start a conversation with the AI
+/endchat - End your conversation with the AI
+/models - See available AI models
+/setmodel [model] - Change the AI model being used
+
+Enjoy chatting with the AI assistant!
+"""
+    
+    await update.message.reply_text(help_text + ai_help)
 
 async def change_language(update: Update, context: CallbackContext) -> None:
     """
