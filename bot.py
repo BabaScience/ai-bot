@@ -64,7 +64,6 @@ async def main():
     """
     Main function to run the bot.
     """
-    # Create new event loop policy and set it up
     try:
         if HEROKU_APP_NAME:
             # Running on Heroku or other server
@@ -83,34 +82,27 @@ async def main():
             await application.updater.start_polling()
             logger.info(f"Bot started with Ollama integration using model: {DEFAULT_MODEL}")
             logger.info(f"Available commands: /start, /help, /lang, /ask, /chat, /endchat, /models, /setmodel")
-            try:
-                # Run until app termination
-                stop_event = asyncio.Event()
-                await stop_event.wait()
-            finally:
-                await application.stop()
-                await application.shutdown()
+            
+            # Create a proper event to wait on
+            stop_signal = asyncio.Event()
+            await stop_signal.wait()
     except Exception as e:
         logger.error(f"Error in main function: {str(e)}")
         raise
+    finally:
+        # Ensure proper cleanup
+        if 'application' in locals() and application:
+            try:
+                await application.stop()
+                await application.shutdown()
+            except Exception as e:
+                logger.error(f"Error during shutdown: {str(e)}")
 
 if __name__ == '__main__':
-    # Set up proper asyncio policy for different environments
-    if os.name == 'posix':  # Linux/Unix/MacOS
-        try:
-            import uvloop
-            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-            logger.info("Using uvloop event loop policy")
-        except ImportError:
-            logger.info("uvloop not available, using default event loop policy")
-    
-    # Create and run the event loop
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
+    # Python 3.12+ has improved asyncio
     try:
-        loop.run_until_complete(main())
+        asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
-    finally:
-        loop.close()
+    except Exception as e:
+        logger.error(f"Fatal error: {str(e)}")

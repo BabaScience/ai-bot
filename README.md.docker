@@ -1,0 +1,146 @@
+# Docker Setup for Telegram Ollama Bot
+
+This document provides instructions for running the Telegram bot with Ollama LLM integration using Docker with Python 3.12.7.
+
+## Prerequisites
+
+1. Docker and Docker Compose installed on your system
+2. A Telegram bot token (from BotFather)
+3. At least 8GB of RAM recommended for running Ollama models
+
+## What's New
+
+- **Python 3.12.7**: Improved asyncio handling and better performance
+- **Resource Management**: Memory limits configured for both the bot and Ollama
+- **Enhanced Stability**: Fixed asyncio event loop issues in containerized environments
+
+## Setup Options
+
+There are two main ways to run this bot with Docker:
+
+### Option 1: Full Docker Setup (Recommended for VPS/Server)
+
+This option runs both the bot and Ollama in Docker containers.
+
+1. Create a `.env` file from the template:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit the `.env` file and add your Telegram bot token:
+   ```
+   BOT_TOKEN=your_telegram_bot_token_here
+   ```
+
+3. Start the containers:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. Pull the required Ollama model:
+   ```bash
+   docker exec ollama-service ollama pull llama3.2
+   ```
+
+5. Check the logs:
+   ```bash
+   docker logs -f telegram-ollama-bot
+   ```
+
+### Option 2: Local Ollama + Dockerized Bot
+
+If you already have Ollama running locally, you can use this setup.
+
+1. Create a `.env` file from the template:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit the `.env` file and add your Telegram bot token:
+   ```
+   BOT_TOKEN=your_telegram_bot_token_here
+   ```
+
+3. Start the bot container:
+   ```bash
+   docker-compose -f docker-compose.local.yml up -d
+   ```
+
+4. Check the logs:
+   ```bash
+   docker logs -f telegram-ollama-bot-local
+   ```
+
+## Managing the Bot
+
+### View Logs
+```bash
+# For full setup
+docker logs -f telegram-ollama-bot
+
+# For local setup
+docker logs -f telegram-ollama-bot-local
+```
+
+### Stop the Bot
+```bash
+# For full setup
+docker-compose down
+
+# For local setup
+docker-compose -f docker-compose.local.yml down
+```
+
+### Restart the Bot
+```bash
+# For full setup
+docker-compose restart bot
+
+# For local setup
+docker-compose -f docker-compose.local.yml restart bot
+```
+
+## Resource Management
+
+The Docker Compose files include memory limits:
+
+- Bot: 512MB limit (256MB reservation)
+- Ollama: 8GB limit (4GB reservation)
+
+You can adjust these values in the docker-compose.yml and docker-compose.local.yml files if needed.
+
+## Using Different Models
+
+To use a different Ollama model:
+
+1. Pull the model:
+   ```bash
+   # For full setup
+   docker exec ollama-service ollama pull mistral
+
+   # For local setup (run directly on your machine)
+   ollama pull mistral
+   ```
+
+2. Use the `/setmodel` command in the Telegram bot:
+   ```
+   /setmodel mistral
+   ```
+
+## Troubleshooting
+
+1. **Bot can't connect to Ollama**: Check that Ollama is running and the OLLAMA_HOST and OLLAMA_PORT environment variables are correct.
+
+2. **No models found**: Make sure you've pulled the models using the commands above.
+
+3. **Container won't start**: Check the logs for errors:
+   ```bash
+   docker logs telegram-ollama-bot
+   ```
+
+4. **Model loading issues**: Some models require more memory than others. Adjust the memory limits in docker-compose.yml if needed.
+
+5. **Event loop errors**: If you still see event loop errors, try the following:
+   - Restart the containers
+   - Check that the Python version is correctly set to 3.12.7
+   - Ensure you're using the latest Ollama version 
