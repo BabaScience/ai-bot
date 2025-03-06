@@ -8,8 +8,12 @@ import ollama
 import time
 from typing import Dict, Any, Optional, List
 import requests
+import concurrent.futures
 
 logger = logging.getLogger(__name__)
+
+# Create a thread pool executor to use for sync operations
+thread_pool = concurrent.futures.ThreadPoolExecutor()
 
 class OllamaConnector:
     """
@@ -29,8 +33,8 @@ class OllamaConnector:
         # Try to check connection to Ollama service
         try:
             # Use a minimal valid request to check if Ollama is running
-            # We'll use a simple ping approach rather than embeddings
-            response = requests.get("http://localhost:11434/api/version")
+            # We'll use a direct request instead of using asyncio here
+            response = requests.get("http://localhost:11434/api/version", timeout=3)
             if response.status_code == 200:
                 logger.info(f"Successfully connected to Ollama service: {response.json()}")
             else:
@@ -57,12 +61,15 @@ class OllamaConnector:
             if system_prompt:
                 messages.insert(0, {"role": "system", "content": system_prompt})
                 
-            # Make the request and return the response
-            response = await asyncio.to_thread(
-                ollama.chat, 
-                model=self.model_name,
-                messages=messages,
-                stream=False
+            # Use the executor to run the ollama.chat in a separate thread
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(
+                thread_pool,
+                lambda: ollama.chat(
+                    model=self.model_name,
+                    messages=messages,
+                    stream=False
+                )
             )
             
             if response and "message" in response:
@@ -84,7 +91,9 @@ class OllamaConnector:
         """
         try:
             # The ollama.list API returns the list of models differently in newer versions
-            models_response = await asyncio.to_thread(ollama.list)
+            loop = asyncio.get_running_loop()
+            models_response = await loop.run_in_executor(thread_pool, ollama.list)
+            
             logger.info(f"Raw models response: {models_response}")
             
             # Handle different response formats based on the Ollama API version
@@ -114,11 +123,12 @@ class OllamaConnector:
         """
         try:
             # Use direct HTTP request to Ollama's API
-            response = await asyncio.to_thread(
-                requests.get, 
-                "http://localhost:11434/api/version", 
-                timeout=5
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(
+                thread_pool,
+                lambda: requests.get("http://localhost:11434/api/version", timeout=5)
             )
+            
             if response.status_code == 200:
                 logger.info(f"Ollama service is running: {response.json()}")
                 return True

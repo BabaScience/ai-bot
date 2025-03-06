@@ -61,28 +61,56 @@ def webhook():
     return 'ok'
 
 async def main():
-    if HEROKU_APP_NAME:
-        # Running on Heroku
-        async with updater:
-            await updater.start_webhook(
-                listen="0.0.0.0",
-                port=int(os.environ.get('PORT', 5000)),
-                url_path=BOT_TOKEN,
-                webhook_url=APP_URL
-            )
-            app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
-    else:
-        # Running locally
-        await application.initialize()
-        await application.start()
-        await application.updater.start_polling()
-        logger.info(f"Bot started with Ollama integration using model: {DEFAULT_MODEL}")
-        logger.info(f"Available commands: /start, /help, /lang, /ask, /chat, /endchat, /models, /setmodel")
-        try:
-            await asyncio.Event().wait()  # Run until interrupted
-        finally:
-            await application.stop()
-            await application.shutdown()
+    """
+    Main function to run the bot.
+    """
+    # Create new event loop policy and set it up
+    try:
+        if HEROKU_APP_NAME:
+            # Running on Heroku or other server
+            async with updater:
+                await updater.start_webhook(
+                    listen="0.0.0.0",
+                    port=int(os.environ.get('PORT', 5000)),
+                    url_path=BOT_TOKEN,
+                    webhook_url=APP_URL
+                )
+                app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+        else:
+            # Running locally
+            await application.initialize()
+            await application.start()
+            await application.updater.start_polling()
+            logger.info(f"Bot started with Ollama integration using model: {DEFAULT_MODEL}")
+            logger.info(f"Available commands: /start, /help, /lang, /ask, /chat, /endchat, /models, /setmodel")
+            try:
+                # Run until app termination
+                stop_event = asyncio.Event()
+                await stop_event.wait()
+            finally:
+                await application.stop()
+                await application.shutdown()
+    except Exception as e:
+        logger.error(f"Error in main function: {str(e)}")
+        raise
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    # Set up proper asyncio policy for different environments
+    if os.name == 'posix':  # Linux/Unix/MacOS
+        try:
+            import uvloop
+            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+            logger.info("Using uvloop event loop policy")
+        except ImportError:
+            logger.info("uvloop not available, using default event loop policy")
+    
+    # Create and run the event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    finally:
+        loop.close()
